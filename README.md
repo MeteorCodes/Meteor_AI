@@ -1,6 +1,6 @@
 # Meteor_AI
 
-Python
+![Language](https://img.shields.io/badge/language-python-brightgreen)
 
 自制AI，使用openai库对接讯飞星火
-![Language](https://img.shields.io/badge/language-c++-brightgreen)  #静态图标
+![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=anuraghazra&show_icons=true&theme=transparent)
