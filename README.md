@@ -45,7 +45,7 @@ Clone 这个 project
 前往项目目录
 
 ```bash
-  cd Meteor_A
+  cd Meteor_AI
 ```
 
 安装依赖
