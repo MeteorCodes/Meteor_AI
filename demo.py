@@ -30,7 +30,7 @@ def que():
 def ai(que):
     client = OpenAI(
         # api_key:拼接key和secret
-        api_key="ddb9b6079cb119d7da856a5558af7f78:NGI3MDNlMzYzYjBhMDU5MDIxNjAyNTQ1",
+        api_key="key:secret",
         base_url='https://spark-api-open.xf-yun.com/v1'  # 指向讯飞星火的请求地址
     )
     completion = client.chat.completions.create(
