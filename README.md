@@ -2,5 +2,3 @@
 
 ![Language](https://img.shields.io/badge/language-python-brightgreen)
 
-自制AI，使用openai库对接讯飞星火
-![Meteor's GitHub stats](https://github-readme-stats.vercel.app/api?username=Meteor&show_icons=true&theme=transparent)
