@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meteor_AI 聊天机器人</title>
+    <link rel="icon" href="{{ url_for('static',filename='cnm.sb.ico') }}">
+
+    <style>
+        body {
+            background-image: url('https://pic.imgdb.cn/item/65c1f4bd9f345e8d0388f3cf.jpg');
+            background-size: cover;
+            background-attachment: fixed;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+            position: relative;
+        }
+
+        .chat-container {
+            width: 600px;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .chat-box {
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            position: relative;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-message {
+            background: #0084ff;
+            color: #fff;
+            align-self: flex-end;
+        }
+
+        .bot-message {
+            background: #e5e5ea;
+            color: #000;
+            align-self: flex-start;
+        }
+
+        .input-container {
+            display: flex;
+            padding: 10px;
+        }
+
+        .input-container input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .input-container button {
+            padding: 10px 20px;
+            border: none;
+            background: #0084ff;
+            color: #fff;
+            border-radius: 5px;
+            margin-left: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .input-container button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .input-container button:hover {
+            background: #006bb3;
+        }
+
+        pre {
+            background: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            overflow-x: auto;
+            margin: 0;
+            position: relative;
+            font-size: 16px;
+        }
+
+        code {
+            background: transparent;
+        }
+
+        .copy-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 5px;
+        }
+
+        .copy-btn, .full-copy-btn {
+            background: #0084ff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .copy-btn:hover, .full-copy-btn:hover {
+            background: #006bb3;
+        }
+
+        .full-copy-btn {
+            display: block;
+            width: 100%;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .settings-btn, .export-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #0084ff;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 24px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s;
+        }
+
+        .export-btn {
+            right: 80px;
+        }
+
+        .settings-btn:hover {
+            background-color: #006bb3;
+        }
+
+        .settings-menu {
+            display: none;
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 10px;
+            z-index: 1000;
+            width: 220px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .settings-menu.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .settings-menu label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .settings-menu input[type="color"], .settings-menu select, .settings-menu input[type="number"] {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .loading-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            z-index: 1000;
+            font-size: 18px;
+        }
+
+        .loading-indicator .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0084ff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <!-- Highlight.js CSS -->
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/styles/default.min.css">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js"></script>
+    <!-- MathJax -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<div class="chat-container">
+    <div class="chat-box" id="chatBox">
+        <!-- Messages will be appended here -->
+    </div>
+    <div class="input-container">
+        <input type="text" id="userInput" placeholder="输入消息..." maxlength="1000">
+        <button id="sendButton" onclick="sendMessage()">发送</button>
+    </div>
+    <!-- 正在回答的动态标志 -->
+    <div class="loading-indicator" id="loadingIndicator" style="display: none;">
+        <div class="spinner"></div>
+        <div>正在回答 <span role="img" aria-label="thinking">🤔</span></div>
+    </div>
+</div>
+
+<!-- 悬浮按钮 -->
+<button class="settings-btn" onclick="toggleSettingsMenu()">⚙️</button>
+<button class="export-btn" onclick="exportChat()">📤</button>
+
+<!-- 设置菜单 -->
+<div class="settings-menu" id="settingsMenu">
+    <label for="chatBgColor">聊天框背景颜色:</label>
+    <input type="color" id="chatBgColor" value="#ffffff">
+    <label for="userBgColor">发送消息背景颜色:</label>
+    <input type="color" id="userBgColor" value="#0084ff">
+    <label for="botBgColor">回答消息背景颜色:</label>
+    <input type="color" id="botBgColor" value="#e5e5ea">
+    <label for="fontFamily">字体:</label>
+    <select id="fontFamily">
+        <option value="Arial" selected>Arial</option>
+        <option value="Verdana">Verdana</option>
+        <option value="Georgia">Georgia</option>
+        <option value="Times New Roman">Times New Roman</option>
+        <option value="Courier New">Courier New</option>
+        <option value="'PingFang SC', sans-serif">苹方 SC</option>
+        <option value="'Microsoft YaHei', sans-serif">微软雅黑</option>
+        <option value="'SimSun', serif">宋体</option>
+        <option value="'SimHei', sans-serif">黑体</option>
+        <option value="'KaiTi', serif">楷体</option>
+        <option value="'LiSu', sans-serif">隶书</option>
+        <option value="'FangSong', serif">仿宋</option>
+        <option value="'YouYuan', sans-serif">幼圆</option>
+        <option value="'Hannotate SC', sans-serif">汉仪中圆</option>
+    </select>
+    <label for="fontSize">页面文字大小 (px):</label>
+    <input type="number" id="fontSize" min="10" max="36" value="16">
+    <label for="buttonColor">发送按钮颜色:</label>
+    <input type="color" id="buttonColor" value="#0084ff">
+</div>
+
+<script>
+    const userInput = document.getElementById('userInput');
+    const sendButton = document.getElementById('sendButton');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const settingsMenu = document.getElementById('settingsMenu');
+    const userBgColorInput = document.getElementById('userBgColor');
+    const botBgColorInput = document.getElementById('botBgColor');
+    const chatBgColorInput = document.getElementById('chatBgColor');
+    const fontFamilySelect = document.getElementById('fontFamily');
+    const buttonColorInput = document.getElementById('buttonColor');
+    const fontSizeInput = document.getElementById('fontSize');
+
+    function updateMessageStyles() {
+        const userBgColor = userBgColorInput.value;
+        const botBgColor = botBgColorInput.value;
+        const chatBgColor = chatBgColorInput.value;
+        const fontFamily = fontFamilySelect.value;
+        const buttonColor = buttonColorInput.value;
+        const fontSize = fontSizeInput.value + 'px';
+
+        document.querySelectorAll('.user-message').forEach(msg => {
+            msg.style.backgroundColor = userBgColor;
+        });
+        document.querySelectorAll('.bot-message').forEach(msg => {
+            msg.style.backgroundColor = botBgColor;
+        });
+        document.getElementById('chatBox').style.backgroundColor = chatBgColor;
+        document.body.style.fontFamily = fontFamily;
+        document.body.style.fontSize = fontSize;
+        sendButton.style.backgroundColor = buttonColor;
+    }
+
+    function appendMessage(content, className) {
+        const message = document.createElement('div');
+        message.className = 'message ' + className;
+        message.innerHTML = formatContent(content);
+
+        const copyContainer = document.createElement('div');
+        copyContainer.className = 'copy-container';
+
+        const fullCopyButton = document.createElement('button');
+        fullCopyButton.className = 'full-copy-btn';
+        fullCopyButton.textContent = '全文复制';
+        fullCopyButton.onclick = () => copyFullMessage(message);
+
+        copyContainer.appendChild(fullCopyButton);
+        message.appendChild(copyContainer);
+
+        document.getElementById('chatBox').appendChild(message);
+        document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
+
+        document.querySelectorAll('pre code').forEach(block => {
+            hljs.highlightBlock(block);
+        });
+
+        MathJax.typeset();
+    }
+
+    function formatContent(content) {
+        let formattedContent = content
+            .replace(/```(\w+)?\n([\s\S]*?)```/g, function (match, lang, code) {
+                return `<pre><code class="language-${lang || 'plaintext'}">${escapeHtml(code)}</code><button class="copy-btn" onclick="copyCode(this)">复制代码</button></pre>`;
+            });
+
+        formattedContent = formattedContent
+            .replace(/\$(.*?)\$/g, '\\($1\\)')
+            .replace(/\$\$\s*(.*?)\s*\$\$/g, '\\[$1\\]');
+
+        return formattedContent;
+    }
+
+    function escapeHtml(html) {
+        return html
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function copyCode(button) {
+        const code = button.previousElementSibling.textContent;
+        navigator.clipboard.writeText(code)
+            .then(() => {
+                alert('代码已复制到剪贴板');
+            })
+            .catch(err => {
+                console.error('复制失败:', err);
+            });
+    }
+
+    function copyFullMessage(message) {
+        const content = message.innerText;
+        navigator.clipboard.writeText(content)
+            .then(() => {
+                alert('消息已复制到剪贴板');
+            })
+            .catch(err => {
+                console.error('复制失败:', err);
+            });
+    }
+
+    function exportChat() {
+        let chatContent = '';
+        document.querySelectorAll('.message').forEach(msg => {
+            const sender = msg.classList.contains('user-message') ? '我' : 'AI';
+            chatContent += `${sender}: ${msg.innerText}\n\n`;
+        });
+
+        const blob = new Blob([chatContent], {type: 'text/plain;charset=utf-8'});
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'chat-history.txt';
+        link.click();
+    }
+
+    function sendMessage() {
+        const userMessage = userInput.value;
+
+        if (userMessage.length > 500) {
+            alert('输入内容超过500字，请缩短内容。');
+            return;
+        }
+
+        if (userMessage.trim() !== '') {
+            appendMessage(userMessage, 'user-message');
+            updateMessageStyles();
+            userInput.value = '';
+            sendButton.disabled = true; // 禁用发送按钮
+            loadingIndicator.style.display = 'flex'; // 显示动态标志
+
+            fetch(`/ai?que=${encodeURIComponent(userMessage)}`)
+                .then(response => response.text())
+                .then(data => {
+                    appendMessage(data, 'bot-message');
+                })
+                .catch(error => {
+                    console.error('错误:', error);
+                    appendMessage('错误: 无法访问AI服务', 'bot-message');
+                })
+                .finally(() => {
+                    loadingIndicator.style.display = 'none'; // 隐藏动态标志
+                    sendButton.disabled = false; // 启用发送按钮
+                });
+        }
+    }
+
+    function toggleSettingsMenu() {
+        const isVisible = settingsMenu.classList.contains('show');
+        if (isVisible) {
+            settingsMenu.classList.remove('show');
+        } else {
+            settingsMenu.classList.add('show');
+        }
+    }
+
+    userInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            sendMessage();
+        }
+    });
+
+    userBgColorInput.addEventListener('input', updateMessageStyles);
+    botBgColorInput.addEventListener('input', updateMessageStyles);
+    chatBgColorInput.addEventListener('input', updateMessageStyles);
+    fontFamilySelect.addEventListener('change', updateMessageStyles);
+    buttonColorInput.addEventListener('input', updateMessageStyles);
+    fontSizeInput.addEventListener('input', updateMessageStyles);
+</script>
+</body>
+</html>
